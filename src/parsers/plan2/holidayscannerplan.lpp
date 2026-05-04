@@ -292,6 +292,37 @@ sukravara           { yylval->ival =   5; return token::WDAY; }
 sanivara            { yylval->ival =   6; return token::WDAY; }
 raviara             { yylval->ival =   7; return token::WDAY; }
 
+bdbangla            { yylval->sval = (char *)"bdbangla"; return token::CALENDAR; }
+
+boishakh            { yylval->ival =   1; return token::MONTH; }
+joishtho            { yylval->ival =   2; return token::MONTH; }
+asharh              { yylval->ival =   3; return token::MONTH; }
+srabon              { yylval->ival =   4; return token::MONTH; }
+bhadro              { yylval->ival =   5; return token::MONTH; }
+asshin              { yylval->ival =   6; return token::MONTH; }
+kartick             { yylval->ival =   7; return token::MONTH; }
+ogrohayon           { yylval->ival =   8; return token::MONTH; }
+poush               { yylval->ival =   9; return token::MONTH; }
+maagh               { yylval->ival =  10; return token::MONTH; }
+falgun              { yylval->ival =  11; return token::MONTH; }
+choitro             { yylval->ival =  12; return token::MONTH; }
+
+grissokal           { yylval->ival = 1201; return token::MONTH; } // boishakh + joishtho
+borsakal            { yylval->ival = 1202; return token::MONTH; } // asharh + srabon
+sorotkal            { yylval->ival = 1203; return token::MONTH; } // bhadro + ashwin
+hemontokal          { yylval->ival = 1204; return token::MONTH; } // kartik + ogrohayon
+shitkal             { yylval->ival = 1205; return token::MONTH; } // poush + magh
+bosontokal          { yylval->ival = 1206; return token::MONTH; } // falgun + choitro
+
+shonibar            { yylval->ival =   6; return token::WDAY; }
+robibar             { yylval->ival =   7; return token::WDAY; }
+sombar              { yylval->ival =   1; return token::WDAY; }
+mongolbar           { yylval->ival =   2; return token::WDAY; }
+budhbar             { yylval->ival =   3; return token::WDAY; }
+brihospotibar       { yylval->ival =   4; return token::WDAY; }
+shukrobar           { yylval->ival =   5; return token::WDAY; }
+
+
 jalali              { yylval->sval = (char *)"jalali"; return token::CALENDAR; }
 
 farvardin           { yylval->ival =   1; return token::MONTH; }

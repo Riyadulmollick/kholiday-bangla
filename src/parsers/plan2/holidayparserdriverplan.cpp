@@ -170,6 +170,46 @@ std::string *HolidayParserDriverPlan::fileToParse() const
 // Adjust month numbering for Hebrew civil calendar leap month
 int HolidayParserDriverPlan::adjustedMonthNumber(int month)
 {
+    // Ambiguous Bangla month tokens are accepted only in bdbangla rules.
+    // We encode them as sentinel values in the lexer and resolve here.
+    if (month == 1001 || month == 1002 || month == 1003) {
+        if (m_eventCalendarType != QLatin1String("bdbangla")) {
+            error(QStringLiteral("Month token is only valid with bdbangla calendar"));
+            return 0;
+        }
+        if (month == 1001) { // ashwin
+            return 6;
+        }
+        if (month == 1002) { // kartik
+            return 7;
+        }
+        return 10; // magh
+    }
+
+    // Bangla season keywords map to their first month.
+    if (month >= 1201 && month <= 1206) {
+        if (m_eventCalendarType != QLatin1String("bdbangla")) {
+            error(QStringLiteral("Season token is only valid with bdbangla calendar"));
+            return 0;
+        }
+        switch (month) {
+        case 1201:
+            return 1; // Grissokal: boishakh + joishtho
+        case 1202:
+            return 3; // Borsakal: asharh + srabon
+        case 1203:
+            return 5; // Sorotkal: bhadro + ashwin
+        case 1204:
+            return 7; // Hemontokal: kartik + ogrohayon
+        case 1205:
+            return 9; // Shitkal: poush + magh
+        case 1206:
+            return 11; // Bosontokal: falgun + choitro
+        default:
+            return 0;
+        }
+    }
+
     if (m_eventCalendarType != QLatin1String("hebrew") || // Only adjust Hebrew months
         m_parseCalendarType != QLatin1String("hebrew") || !m_parseCalendar.isLeapYear(m_parseYear) || // Only adjust in leap year
         month < 6) { // Only adjust from Adar onwards
@@ -290,6 +330,8 @@ QCalendarSystem::CalendarSystem HolidayParserDriverPlan::typeToSystem(const QStr
         return QCalendarSystem::EthiopicCalendar;
     } else if (calendarType == QStringLiteral("indiannational")) {
         return QCalendarSystem::IndianNationalCalendar;
+    } else if (calendarType == QStringLiteral("bdbangla")) {
+        return QCalendarSystem::BDBanglaCalendar;
     }
     return QCalendarSystem::GregorianCalendar;
 }
@@ -313,6 +355,8 @@ QString HolidayParserDriverPlan::systemToType(QCalendarSystem::CalendarSystem ca
         return QStringLiteral("ethiopian");
     case QCalendarSystem::IndianNationalCalendar:
         return QStringLiteral("indiannational");
+    case QCalendarSystem::BDBanglaCalendar:
+        return QStringLiteral("bdbangla");
     default:
         return QStringLiteral("gregorian");
     }

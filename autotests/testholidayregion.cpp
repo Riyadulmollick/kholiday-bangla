@@ -17,6 +17,8 @@
 #include <QString>
 #include <QTest>
 
+#include "../src/parsers/qcalendarsystem_p.h"
+
 QTEST_MAIN(HolidayRegionTest)
 
 void HolidayRegionTest::printMetadata(const KHolidays::HolidayRegion &region)
@@ -108,6 +110,35 @@ void HolidayRegionTest::testLoadFileCalendarSystems()
     parseRegionCalendarYear(region, 2024);
     parseRegionCalendarYear(region, 2025);
     qDebug() << "";
+}
+
+void HolidayRegionTest::testBDBanglaCalendar()
+{
+    // 1427-01-01 Bangla == 2020-04-14 Gregorian (Pohela Boishakh).
+    const QCalendarSystem cal(QCalendarSystem::BDBanglaCalendar);
+    QCOMPARE(cal.date(1427, 1, 1), QDate(2020, 4, 14));
+    QCOMPARE(cal.daysInMonth(1427, 1), 31);
+    QCOMPARE(cal.daysInMonth(1427, 7), 30);
+    QCOMPARE(cal.daysInMonth(1430, 11), 30); // Falgun has 30 days when (1430 + 594 == 2024) is a Gregorian leap year
+
+    int y = 0;
+    int m = 0;
+    int d = 0;
+    cal.getDate(QDate(2020, 4, 14), &y, &m, &d);
+    QCOMPARE(y, 1427);
+    QCOMPARE(m, 1);
+    QCOMPARE(d, 1);
+
+    // Ensure the plan2 parser can read bdbangla tokens and produce correct Gregorian dates.
+    KHolidays::HolidayRegion region(QFileInfo(KDESRCDIR "/holiday_calendar_systems"));
+    auto holidays = region.rawHolidaysWithAstroSeasons(QDate(2020, 4, 14), QDate(2020, 4, 14));
+    QVERIFY(holidayListContains(holidays, QStringLiteral("Bangla New Year (BD calendar)")));
+
+    holidays = region.rawHolidaysWithAstroSeasons(QDate(2020, 9, 16), QDate(2020, 9, 16));
+    QVERIFY(holidayListContains(holidays, QStringLiteral("Ashwin Plain (BD calendar)")));
+
+    holidays = region.rawHolidaysWithAstroSeasons(QDate(2020, 8, 16), QDate(2020, 8, 16));
+    QVERIFY(holidayListContains(holidays, QStringLiteral("Sorotkal Start (BD calendar)")));
 }
 
 void HolidayRegionTest::testLoadFile()

@@ -34,7 +34,9 @@ public:
         PersianCalendar = 13,
         ROCCalendar = 14,
         ThaiCalendar = 15,
-        LastCalendar = ThaiCalendar,
+        /// Bangladesh Bangla (Bengali) civil calendar (distinct month lengths from Indian national)
+        BDBanglaCalendar = 16,
+        LastCalendar = BDBanglaCalendar,
     };
 
     explicit QCalendarSystem(QCalendarSystem::CalendarSystem calendar = QCalendarSystem::DefaultCalendar);

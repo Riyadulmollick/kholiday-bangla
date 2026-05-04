@@ -2,15 +2,149 @@
     This file is part of the kholidays library.
 
     SPDX-FileCopyrightText: 2014 John Layt <john@layt.net>
+    SPDX-FileCopyrightText: 2026 Riyadul Islam Mollick <riyadul2000@yahoo.com>
 
     SPDX-License-Identifier: LGPL-2.0-or-later
-*/
+ */
 
 #include "kholidays_debug.h"
 #include "qcalendarsystem_p.h"
 
 #include <QDate>
 #include <QSharedData>
+
+namespace
+{
+// Bangladesh Bangla civil calendar (month lengths per national reform; long Falgun when Gregorian year (Y+594) is leap)
+constexpr int kBanglaRefYear = 1427;
+
+static qint64 banglaReferenceJulianDay()
+{
+    return QDate(2020, 4, 14).toJulianDay(); /* Pohela Boishakh 1427 */
+}
+
+static bool gregorianIsLeap(int gYear)
+{
+    return (gYear % 4 == 0 && gYear % 100 != 0) || (gYear % 400 == 0);
+}
+
+static int gregorianLeapCountExclusive(int gYear)
+{
+    --gYear;
+    return gYear / 4 - gYear / 100 + gYear / 400;
+}
+
+static int gregorianLeapsInInclusive(int y1, int y2)
+{
+    if (y1 > y2) {
+        return 0;
+    }
+    return gregorianLeapCountExclusive(y2 + 1) - gregorianLeapCountExclusive(y1);
+}
+
+static bool banglaIsLongYear(int banglaYear)
+{
+    return gregorianIsLeap(banglaYear + 594);
+}
+
+static int banglaDaysInYear(int banglaYear)
+{
+    return banglaIsLongYear(banglaYear) ? 366 : 365;
+}
+
+static qint64 banglaJdOfBoishakh1(int year)
+{
+    const qint64 refJd = banglaReferenceJulianDay();
+    if (year == kBanglaRefYear) {
+        return refJd;
+    }
+    if (year > kBanglaRefYear) {
+        qint64 jd = refJd;
+        jd += qint64(year - kBanglaRefYear) * 365;
+        jd += gregorianLeapsInInclusive(kBanglaRefYear + 594, year - 1 + 594);
+        return jd;
+    }
+    qint64 jd = refJd;
+    for (int y = kBanglaRefYear - 1; y >= year; --y) {
+        jd -= banglaDaysInYear(y);
+    }
+    return jd;
+}
+
+static int banglaDaysInMonth(int year, int month)
+{
+    if (month <= 6) {
+        return 31;
+    }
+    if (month <= 10) {
+        return 30;
+    }
+    if (month == 11) {
+        return banglaIsLongYear(year) ? 30 : 29;
+    }
+    return 30;
+}
+
+static qint64 banglaJulianDayFromDate(int year, int month, int day)
+{
+    qint64 jd = banglaJdOfBoishakh1(year);
+    for (int m = 1; m < month; ++m) {
+        jd += banglaDaysInMonth(year, m);
+    }
+    jd += day - 1;
+    return jd;
+}
+
+static void banglaJulianDayToDate(qint64 jd, int *year, int *month, int *day)
+{
+    int y = kBanglaRefYear;
+    if (jd >= banglaJdOfBoishakh1(kBanglaRefYear)) {
+        y += static_cast<int>((jd - banglaJdOfBoishakh1(kBanglaRefYear)) / 365);
+    } else {
+        const qint64 diff = banglaJdOfBoishakh1(kBanglaRefYear) - jd;
+        y -= static_cast<int>(diff / 366) + 1;
+    }
+    if (y < 1) {
+        y = 1;
+    }
+    while (banglaJdOfBoishakh1(y + 1) <= jd) {
+        ++y;
+    }
+    while (jd < banglaJdOfBoishakh1(y)) {
+        --y;
+    }
+    const qint64 jdStart = banglaJdOfBoishakh1(y);
+    int doy = static_cast<int>(jd - jdStart) + 1;
+    int m = 1;
+    while (m <= 12) {
+        const int dim = banglaDaysInMonth(y, m);
+        if (doy <= dim) {
+            if (year) {
+                *year = y;
+            }
+            if (month) {
+                *month = m;
+            }
+            if (day) {
+                *day = doy;
+            }
+            return;
+        }
+        doy -= dim;
+        ++m;
+    }
+    if (year) {
+        *year = y;
+    }
+    if (month) {
+        *month = 12;
+    }
+    if (day) {
+        *day = banglaDaysInMonth(y, 12);
+    }
+}
+
+} // namespace
 
 class QCalendarSystemPrivate : public QSharedData
 {
@@ -88,6 +222,8 @@ qint64 QCalendarSystemPrivate::epoch() const
         return 2419403; //  0001-01-01 ==  1912-01-01 Gregorian
     case QCalendarSystem::ThaiCalendar:
         return 1522734; //  0000-01-01 == -0544-01-01 Gregorian
+    case QCalendarSystem::BDBanglaCalendar:
+        return banglaJdOfBoishakh1(1);
     default:
         return 0;
     }
@@ -118,6 +254,8 @@ qint64 QCalendarSystemPrivate::earliestValidDate() const
         return 2419403; //  0001-01-01 == 1912-01-01 Gregorian
     case QCalendarSystem::ThaiCalendar:
         return 1522734; //  0000-01-01 == -0544-01-01 Gregorian
+    case QCalendarSystem::BDBanglaCalendar:
+        return banglaJdOfBoishakh1(1);
     default:
         return 0;
     }
@@ -134,6 +272,8 @@ int QCalendarSystemPrivate::earliestValidYear() const
     case QCalendarSystem::ISO8601Calendar:
     case QCalendarSystem::ThaiCalendar:
         return 0;
+    case QCalendarSystem::BDBanglaCalendar:
+        return 1;
     default:
         return 1;
     }
@@ -164,6 +304,8 @@ qint64 QCalendarSystemPrivate::latestValidDate() const
         return 6071462; //  9999-12-31 == 11910-12-31 Gregorian
     case QCalendarSystem::ThaiCalendar:
         return 5175158; //  9999-12-31 ==  9456-12-31 Gregorian
+    case QCalendarSystem::BDBanglaCalendar:
+        return banglaJulianDayFromDate(9999, 12, 30);
     default:
         return 0;
     }
@@ -288,6 +430,8 @@ int QCalendarSystemPrivate::daysInMonth(int year, int month) const
             return 30;
         }
     }
+    case QCalendarSystem::BDBanglaCalendar:
+        return banglaDaysInMonth(year, month);
     case QCalendarSystem::IslamicCivilCalendar: {
         if (month == 12 && isLeapYear(year)) {
             return 30;
@@ -340,6 +484,13 @@ int QCalendarSystemPrivate::quarter(int month) const
 bool QCalendarSystemPrivate::isLeapYear(int year) const
 {
     year = year + yearOffset();
+
+    if (calendarSystem() == QCalendarSystem::BDBanglaCalendar) {
+        if (year < 1 && !hasYearZero()) {
+            ++year;
+        }
+        return banglaIsLongYear(year);
+    }
 
     // Uses same rule as Gregorian and in same years as Gregorian to keep in sync.
     // Can't use yearOffset() as this offset only applies for isLeapYear().
@@ -457,6 +608,10 @@ void QCalendarSystemPrivate::julianDayToDate(qint64 jd, int *year, int *month, i
         break;
     }
 
+    case QCalendarSystem::BDBanglaCalendar:
+        banglaJulianDayToDate(jd, &yy, &mm, &dd);
+        break;
+
     default:
         break;
     }
@@ -561,6 +716,10 @@ qint64 QCalendarSystemPrivate::julianDayFromDate(int year, int month, int day) c
             - 32083;
         break;
     }
+
+    case QCalendarSystem::BDBanglaCalendar:
+        jd = banglaJulianDayFromDate(year, month, day);
+        break;
 
     default:
         break;

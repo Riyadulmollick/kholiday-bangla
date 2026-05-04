@@ -30,6 +30,7 @@ private Q_SLOTS:
     void testDefaultRegions();
     void testSolistaleInHolidays();
     void testLoadFileCalendarSystemsForPlasma();
+    void testBDBanglaCalendar();
     void testDominicanRepublicDiadelaConstitucion();
     void testUsAmericanJuneteenth();
     void testCategoryFiltering();

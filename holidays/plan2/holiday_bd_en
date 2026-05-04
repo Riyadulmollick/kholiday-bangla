@@ -22,7 +22,7 @@ description "Holiday file for Bangladesh"
 "International Mother Language Day"                                             public on february 21
 "Birthday of Father of the Nation Bangabandhu Sheikh Mujibur Rahman"            public on march 17
 "Independence Day"                                                              public on march 26
-"Bengali New Year's Day"                                                        public on april 14
+"Bengali New Year's Day"                                                        public on bdbangla boishakh 1
 "May Day"                                                                       public on may 1
 "National Mourning Day"                                                         public on august 15
 "Victory Day"                                                                   public on december 16
@@ -155,9 +155,10 @@ description "Holiday file for Bangladesh"
 "Bank Holiday"          financial on december 31
 
 :: Cultural
-"Pahela Falgun"         cultural on february 14
-"Nabanna"               cultural on november 16
-"Shakrain"              cultural on january 14 length 2 days
+"Pahela Falgun"         cultural on bdbangla falgun 1
+"Nabanna"               cultural on bdbangla ogrohayon 1
+"Shakrain"              cultural on bdbangla poush 30
+"Boisabi"               cultural on bdbangla choitro length 3
 
 :: Historical Dates
 "Genocide Remembrance Day"    commemorative on march 25
